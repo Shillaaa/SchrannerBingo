@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo</title>
+    <title>Schranner Bingo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -85,7 +85,7 @@
         @media (max-width: 600px) {
             .bingo-cell.marked::after {
                 top: 40%;
-                font-size: 75px; /* Smaller size for mobile */
+                font-size: 75px;
             }
 
             h1 {
@@ -112,7 +112,6 @@
             }
         }
     </style>
-
 </head>
 
 <body>
@@ -120,12 +119,25 @@
     <div class="bingo-grid" id="bingoGrid"></div>
     <button onClick="resetBingo()">Reset Bingo</button>
     <script>
+        const words = [
+            "Kariertes Hemd", "Amerika", "Redet leise und Bayerisch", "Ich habe nichts gegen Migranten, (aber)", "Kopfrechnen (10/2=80)",
+            "Technische Geräte sind scheiße", "Ich will zu Mama", "Lobt Kinder", "Beleidigt Werkzeuge", "Schreit plötzlich",
+            "Geschichten von Bekannten", "Russen", "Droht mit Kießling", "Politiker sind Hurensöhne",
+            "Wer misst misst mist", "Ökologie", "Schlägt gegen die Lampe", "Lobt sich selbst", "Putin",
+            "Chinesen", "Studium ist scheiße macht Ausbildung", "Erzählt Lebensgeschichten", "Droht mit Stock", "Nachhilfezeit"
+        ];
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
         var selected = [];
         function resetBingo() {
             localStorage.setItem("isSet", false);
             localStorage.setItem("markedIds", "");
             location.reload();
         }
+
         function toggleMarked(gridCell) {
             gridCell.classList.toggle('marked');
             const cellId = Number(gridCell.id);
@@ -176,30 +188,27 @@
         }
 
         function getNewWords() {
-            fetch("/words")
-                .then(response => response.json())
-                .then(words => {
-                    const grid = document.getElementById("bingoGrid");
-                    let i = 0;
+            const grid = document.getElementById("bingoGrid");
+            const shuffledWords = shuffle(words);
+            let i = 0;
 
-                    words.slice(0, 25).forEach((word) => {
-                        const cell = document.createElement("div");
-                        cell.className = "bingo-cell";
+            shuffledWords.slice(0, 25).forEach((word) => {
+                const cell = document.createElement("div");
+                cell.className = "bingo-cell";
 
-                        if (i === 12) {
-                            const freeCell = document.createElement("div");
-                            freeCell.id = i;
-                            saveWord("Free!", freeCell);
-                            grid.appendChild(freeCell);
-                            i++;
-                        }
+                if (i === 12) {
+                    const freeCell = document.createElement("div");
+                    freeCell.id = i;
+                    saveWord("Free!", freeCell);
+                    grid.appendChild(freeCell);
+                    i++;
+                }
 
-                        cell.id = i;
-                        i++;
-                        saveWord(word, cell);
-                        grid.appendChild(cell);
-                    });
-                });
+                cell.id = i;
+                i++;
+                saveWord(word, cell);
+                grid.appendChild(cell);
+            });
         }
 
         init();
