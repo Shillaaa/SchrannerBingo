@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 10px;
+            font-size: 22px;
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            place-content: center;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .bingo-cell {
+            width: 75px;
+            height: 75px;
+            padding: 8px;
+            border: 1px solid black;
+            background: white;
+            text-align: center;
+            font-size: 12px;
+            transition: background 0.3s, color 0.3s;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bingo-cell:hover {
+            background: #ddd;
+        }
+
+        .bingo-cell.marked {
+            background: lightgray;
+            color: black;
+        }
+
+        .bingo-cell.marked::after {
+            content: '\2716';
+            font-size: 75px;
+            color: black;
+            opacity: 0.5;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        button {
+            font-size: 14px;
+            padding: 10px 18px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        @media (max-width: 600px) {
+            .bingo-cell.marked::after {
+                top: 40%;
+                font-size: 75px; /* Smaller size for mobile */
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .bingo-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 1px;
+            }
+
+            .bingo-cell {
+                font-size: 11px;
+                width: 60px;
+                height: 60px;
+                position: relative;
+                padding: 5px;
+            }
+
+            button {
+                width: 80%;
+                padding: 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>Schranner Bingo</h1>
+    <div class="bingo-grid" id="bingoGrid"></div>
+    <button onClick="resetBingo()">Reset Bingo</button>
+    <script>
+        var selected = [];
+        function resetBingo() {
+            localStorage.setItem("isSet", false);
+            localStorage.setItem("markedIds", "");
+            location.reload();
+        }
+        function toggleMarked(gridCell) {
+            gridCell.classList.toggle('marked');
+            const cellId = Number(gridCell.id);
+            if (selected.includes(cellId)) {
+                selected = selected.filter(id => id !== cellId);
+            } else {
+                selected.push(cellId);
+            }
+            localStorage.setItem("markedIds", selected.join(","));
+        }
+
+        function saveWord(gridWord, gridCell) {
+            gridCell.className = "bingo-cell";
+            gridCell.textContent = gridWord;
+            gridCell.addEventListener("click", () => {
+                toggleMarked(gridCell);
+            });
+            localStorage.setItem(gridCell.id, gridCell.textContent);
+        }
+
+        function init() {
+            if (localStorage.getItem("isSet") === "true") {
+                const grid = document.getElementById("bingoGrid");
+
+                selected = Array.from(new Set((localStorage.getItem("markedIds") || "").split(",").filter(Boolean).map(Number)));
+
+                for (let i = 0; i < 25; i++) {
+                    const cell = document.createElement("div");
+                    cell.id = i;
+                    cell.className = "bingo-cell";
+                    cell.textContent = localStorage.getItem(i) || "";
+
+                    if (selected.includes(i)) {
+                        cell.classList.add("marked");
+                    }
+
+                    cell.addEventListener("click", () => {
+                        toggleMarked(cell);
+                    });
+
+                    grid.appendChild(cell);
+                }
+            } else {
+                getNewWords();
+                localStorage.setItem("isSet", "true");
+                localStorage.setItem("Time:", 1);
+            }
+        }
+
+        function getNewWords() {
+            fetch("/words")
+                .then(response => response.json())
+                .then(words => {
+                    const grid = document.getElementById("bingoGrid");
+                    let i = 0;
+
+                    words.slice(0, 25).forEach((word) => {
+                        const cell = document.createElement("div");
+                        cell.className = "bingo-cell";
+
+                        if (i === 12) {
+                            const freeCell = document.createElement("div");
+                            freeCell.id = i;
+                            saveWord("Free!", freeCell);
+                            grid.appendChild(freeCell);
+                            i++;
+                        }
+
+                        cell.id = i;
+                        i++;
+                        saveWord(word, cell);
+                        grid.appendChild(cell);
+                    });
+                });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
